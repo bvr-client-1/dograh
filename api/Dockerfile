@@ -6,6 +6,9 @@ FROM python:3.13-slim AS builder
 
 WORKDIR /app
 
+# GitHub token for cloning private submodules (passed as Docker build arg)
+ARG GITHUB_TOKEN
+
 # Install git in builder stage (needed for any pip install from git URLs)
 RUN apt-get update && apt-get install -y \
     git \
@@ -34,7 +37,7 @@ RUN uv pip install -r /tmp/req.txt
 #   2. Pre-download NLTK's punkt_tab tokenizer so pipecat's text processing
 #      doesn't hit the network on first agent run. NLTK auto-finds it under
 #      sys.prefix/nltk_data, so it travels with the venv on COPY.
-COPY pipecat /tmp/pipecat
+RUN git clone --depth 1 https://x-access-token:${GITHUB_TOKEN}@github.com/dograh-hq/pipecat.git /tmp/pipecat
 RUN uv pip install '/tmp/pipecat[cartesia,deepgram,openai,elevenlabs,groq,google,azure,sarvam,soundfile,silero,webrtc,speechmatics,openrouter,camb,mcp]' \
  && uv pip uninstall opencv-python \
  && uv pip install opencv-python-headless \
